@@ -2,7 +2,6 @@ FROM php:8.2-cli
 
 WORKDIR /var/www
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -13,17 +12,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql gd
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy application files
 COPY . .
 
-# Install Laravel dependencies
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
-
-# Expose port
 EXPOSE 10000
 
-# Start Laravel server
 CMD php artisan serve --host=0.0.0.0 --port=10000
