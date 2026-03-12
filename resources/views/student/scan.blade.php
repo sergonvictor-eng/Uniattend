@@ -22,9 +22,31 @@
             <button onclick="processManualCode()" class="btn btn-primary" style="margin-top: 1rem;">Submit</button>
         </div>
     </div>
+              <!-- Attendance Code Entry -->
+            <div style="margin-top:2rem; padding:1.5rem; border:1px solid #ddd; border-radius:8px;">
+    
+               <h3>Enter Attendance Code</h3>
+                <p style="color:#666; font-size:0.9rem;">
+                 If your camera cannot scan the QR code, enter the code shown by the lecturer.
+               </p>
 
+              <form id="attendanceCodeForm">
+                 <input 
+                 type="text"
+                     id="attendance_code"
+                        placeholder="Enter attendance code"
+                style="padding:10px; width:200px; text-transform:uppercase;"
+            required
+        >
+
+         <button type="submit" class="btn btn-primary">
+            Submit Code
+        </button>
+      </form>
+
+       </div>
     <div id="result" style="margin-top: 2rem; display: none;"></div>
-</div>
+   </div>
 @endsection
 
 @section('extra-js')
@@ -159,5 +181,51 @@ function showResult(type, message) {
     resultDiv.style.color = color.text;
     resultDiv.style.border = `1px solid ${color.border}`;
 }
+document.getElementById('attendanceCodeForm').addEventListener('submit', async function(e){
+
+    e.preventDefault();
+
+    const code = document.getElementById('attendance_code').value;
+
+    if (!navigator.geolocation) {
+        showResult('error', 'Geolocation is not supported by your browser');
+        return;
+    }
+
+    showResult('info', 'Getting your location...');
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+
+        try {
+
+            const response = await fetch('/api/attendance/code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    attendance_code: code,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                })
+            });
+
+            const data = await response.json();
+
+            if(response.ok){
+                showResult('success', data.message);
+            } else {
+                showResult('error', data.message);
+            }
+
+        } catch(error){
+            showResult('error', 'Error submitting attendance');
+        }
+
+    });
+
+});
 </script>
 @endsection

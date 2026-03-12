@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Attendance APIs
     Route::prefix('attendance')->group(function () {
         Route::post('/scan', [AttendanceController::class, 'scanQRCode']);
+        Route::post('/code', [AttendanceController::class, 'submitAttendanceCode']);
         Route::get('/student', [AttendanceController::class, 'studentAttendance']);
         Route::get('/session/{session}', [AttendanceController::class, 'sessionAttendance']);
     });

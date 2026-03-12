@@ -52,23 +52,31 @@ class AttendanceController extends Controller
             ], 403);
         }
 
-        // Get session
-        $session = Session::findOrFail($request->session_id);
+        // Get session using session ID and QR token
+        $session = Session::where('id', $request->session_id)
+          ->where('qr_token', $request->token)
+          ->first();
 
-        // Validate QR token
-        if ($session->qr_token !== $request->token) {
+          if (!$session) {
             return response()->json([
-                'message' => 'Invalid QR code'
+               'message' => 'Invalid or expired QR code'
             ], 400);
-        }
+}
 
         // Check if session is active
-        if ($session->status !== 'active') {
+         if ($session->status !== 'active') {
             return response()->json([
-                'message' => 'This session has ended'
+        'message' => 'This session has ended'
             ], 400);
-        }
+}
 
+         // Check if session has expired
+         if ($session->end_time && now()->greaterThan($session->end_time)) {
+        return response()->json([
+              'message' => 'Attendance time has expired'
+          ], 400);
+}
+ 
         // Check if student has already marked attendance
         $existingAttendance = Attendance::where('student_id', $student->id)
             ->where('session_id', $session->id)
@@ -196,4 +204,92 @@ class AttendanceController extends Controller
     {
         return view('student.scan');
     }
+    public function submitAttendanceCode(Request $request)
+{
+    $request->validate([
+        'attendance_code' => 'required|string',
+        'latitude' => 'required|numeric|between:-90,90',
+        'longitude' => 'required|numeric|between:-180,180',
+    ]);
+
+    $student = Auth::user();
+
+    // Verify user is a student
+    if (!$student->isStudent()) {
+        return response()->json([
+            'message' => 'Only students can mark attendance'
+        ], 403);
+    }
+
+    // Find active session using attendance code
+    $session = Session::where('attendance_code', $request->attendance_code)
+        ->where('status', 'active')
+        ->first();
+
+    if (!$session) {
+        return response()->json([
+            'message' => 'Invalid or expired attendance code'
+        ], 400);
+    }
+
+    // Check if session has expired
+    if ($session->end_time && now()->greaterThan($session->end_time)) {
+        return response()->json([
+            'message' => 'Attendance time has expired'
+        ], 400);
+    }
+
+    // Check if student already marked attendance
+    $existingAttendance = Attendance::where('student_id', $student->id)
+        ->where('session_id', $session->id)
+        ->first();
+
+    if ($existingAttendance) {
+        return response()->json([
+            'message' => 'You have already marked attendance for this session',
+            'attendance' => $existingAttendance,
+        ], 400);
+    }
+
+    // Calculate distance from venue
+    $distance = $this->calculateDistance(
+        $request->latitude,
+        $request->longitude,
+        $session->venue_latitude,
+        $session->venue_longitude
+    );
+
+    // Check allowed radius
+    if ($distance > $session->allowed_radius) {
+        return response()->json([
+            'message' => 'You are too far from the venue to mark attendance',
+            'distance' => round($distance, 2),
+            'allowed_radius' => $session->allowed_radius,
+        ], 400);
+    }
+
+    // Determine status (present or late)
+    $sessionStartTime = $session->start_time;
+    $currentTime = now();
+    $minutesLate = $currentTime->diffInMinutes($sessionStartTime);
+    $status = $minutesLate > 15 ? 'late' : 'present';
+
+    // Create attendance
+    $attendance = Attendance::create([
+        'student_id' => $student->id,
+        'session_id' => $session->id,
+        'timestamp' => now(),
+        'latitude' => $request->latitude,
+        'longitude' => $request->longitude,
+        'distance_from_venue' => round($distance, 2),
+        'status' => $status,
+    ]);
+
+    return response()->json([
+        'message' => 'Attendance marked successfully using code',
+        'attendance' => $attendance->load('session.course'),
+        'distance' => round($distance, 2),
+    ]);
 }
+}
+
