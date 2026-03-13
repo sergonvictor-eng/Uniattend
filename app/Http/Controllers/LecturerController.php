@@ -16,23 +16,41 @@ class LecturerController extends Controller
 
       $now = now();
       $today = $now->format('l'); // Monday, Tuesday etc
+      $currentTime = $now->format('H:i');
 
-       $courses = $lecturer->coursesAsLecturer()
-        ->whereHas('timetables', function ($query) use ($today, $now) {
-            $query->where('day', $today)
-                  ->whereTime('start_time', '<=', $now)
-                  ->whereTime('end_time', '>=', $now);
+      // Get today's classes for this lecturer
+      $todayClasses = $lecturer->coursesAsLecturer()
+        ->whereHas('timetables', function ($query) use ($today) {
+            $query->where('day', $today);
         })
-        ->with('timetables')
-        ->get();
+        ->with(['timetables' => function ($query) use ($today) {
+            $query->where('day', $today)->orderBy('start_time');
+        }])
+        ->get()
+        ->map(function ($course) use ($currentTime) {
+            $timetable = $course->timetables->first();
+            $startTime = $timetable ? $timetable->start_time : null;
+            $endTime = $timetable ? $timetable->end_time : null;
+            
+            return [
+                'course' => $course,
+                'timetable' => $timetable,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'can_start_session' => $startTime && $currentTime >= $startTime && (!$endTime || $currentTime <= $endTime),
+                'is_active' => Session::where('course_id', $course->id)
+                    ->where('status', 'active')
+                    ->exists(),
+            ];
+        });
 
       $activeSessions = \App\Models\Session::where('lecturer_id', $lecturer->id)
         ->where('status', 'active')
         ->with('course')
         ->get();
 
-       return view('lecturer.dashboard', compact('courses', 'activeSessions'));
-    }
+       return view('lecturer.dashboard', compact('todayClasses', 'activeSessions'));
+   }
 
      public function startSession(Request $request)
    {
@@ -43,6 +61,37 @@ class LecturerController extends Controller
       ]);
 
       $lecturer = Auth::user();
+      $now = now();
+      $today = $now->format('l');
+      $currentTime = $now->format('H:i');
+
+      // Check if course has timetable for today and current time
+      $course = \App\Models\Course::find($request->course_id);
+      $timetable = \App\Models\Timetable::where('course_id', $request->course_id)
+          ->where('day', $today)
+          ->first();
+
+      if (!$timetable) {
+        return response()->json([
+            'message' => 'No class scheduled for this course today'
+        ], 400);
+      }
+
+      // Check if current time is within class time
+      $startTime = $timetable->start_time;
+      $endTime = $timetable->end_time;
+
+      if ($currentTime < $startTime) {
+        return response()->json([
+            'message' => 'Class time has not started yet. Start time: ' . $startTime
+        ], 400);
+      }
+
+      if ($endTime && $currentTime > $endTime) {
+        return response()->json([
+            'message' => 'Class time has ended. End time: ' . $endTime
+        ], 400);
+      }
 
       // Check if an active session already exists
       $existingSession = Session::where('course_id', $request->course_id)
@@ -58,14 +107,14 @@ class LecturerController extends Controller
       $session = Session::create([
     'course_id' => $request->course_id,
     'lecturer_id' => $lecturer->id,
-    'start_time' => now(),
-    'end_time' => now()->addHours(2), // class duration
+    'start_time' => $now,
+    'end_time' => $endTime ? \Carbon\Carbon::parse($today . ' ' . $endTime) : $now->addHours(2),
     'qr_token' => Str::uuid(), // generates unique QR token
     'attendance_code' => strtoupper(Str::random(6)), // manual attendance code
     'status' => 'active',
     'venue_latitude' => $request->latitude,
     'venue_longitude' => $request->longitude,
-    'allowed_radius' => 100,
+    'allowed_radius' => $timetable->allowed_radius ?? 100,
    ]);
 
       return response()->json([

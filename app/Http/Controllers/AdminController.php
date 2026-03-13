@@ -73,7 +73,7 @@ class AdminController extends Controller
 
                 // Validate
                 $validator = Validator::make($userData, [
-                    'identifier' => 'required|string|unique:users,identifier',
+                    'identifier' => 'required|string',
                     'name' => 'required|string|max:255',
                     'email' => 'nullable|email',
                 ]);
@@ -83,12 +83,25 @@ class AdminController extends Controller
                     continue;
                 }
 
-                // Create user with default password
-                $userData['password'] = Hash::make('password123');
-                $userData['is_active'] = true;
-
-                User::create($userData);
-                $imported++;
+                // Check if user exists and update, or create new
+                $existingUser = User::where('identifier', $userData['identifier'])->first();
+                
+                if ($existingUser) {
+                    // Update existing user
+                    $existingUser->update([
+                        'name' => $userData['name'],
+                        'email' => $userData['email'],
+                        'role' => $userData['role'],
+                        'is_active' => true,
+                    ]);
+                    $imported++;
+                } else {
+                    // Create new user with default password
+                    $userData['password'] = Hash::make('password123');
+                    $userData['is_active'] = true;
+                    User::create($userData);
+                    $imported++;
+                }
             }
 
             $message = "{$imported} users imported successfully.";
@@ -154,7 +167,7 @@ class AdminController extends Controller
                     ]
                 );
 
-                // Create timetable entry
+                // Create timetable entry (replace if exists)
                 $timetableData = [
                     'course_id' => $course->id,
                     'day' => $day,
@@ -180,8 +193,21 @@ class AdminController extends Controller
                     continue;
                 }
 
-                Timetable::create($timetableData);
-                $imported++;
+                // Check if timetable entry exists and replace, or create new
+                $existingTimetable = Timetable::where('course_id', $course->id)
+                    ->where('day', $day)
+                    ->where('start_time', $startTime)
+                    ->first();
+
+                if ($existingTimetable) {
+                    // Update existing timetable
+                    $existingTimetable->update($timetableData);
+                    $imported++;
+                } else {
+                    // Create new timetable
+                    Timetable::create($timetableData);
+                    $imported++;
+                }
             }
 
             $message = "{$imported} timetable entries imported successfully.";

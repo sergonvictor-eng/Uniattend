@@ -179,6 +179,39 @@ class AttendanceController extends Controller
     {
         $student = Auth::user();
         
+        $now = now();
+        $today = $now->format('l'); // Monday, Tuesday etc
+        $currentTime = $now->format('H:i');
+
+        // Get today's classes for this student
+        $todayClasses = [];
+        if ($student->course) {
+            $todayClasses = \App\Models\Course::where('course_name', $student->course)
+                ->whereHas('timetables', function ($query) use ($today) {
+                    $query->where('day', $today);
+                })
+                ->with(['timetables' => function ($query) use ($today) {
+                    $query->where('day', $today)->orderBy('start_time');
+                }])
+                ->get()
+                ->map(function ($course) use ($currentTime) {
+                    $timetable = $course->timetables->first();
+                    $startTime = $timetable ? $timetable->start_time : null;
+                    $endTime = $timetable ? $timetable->end_time : null;
+                    
+                    return [
+                        'course' => $course,
+                        'timetable' => $timetable,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                        'can_scan' => $startTime && $currentTime >= $startTime && (!$endTime || $currentTime <= $endTime),
+                        'has_active_session' => \App\Models\Session::where('course_id', $course->id)
+                            ->where('status', 'active')
+                            ->exists(),
+                    ];
+                });
+        }
+        
         // Get student's attendance history
         $attendances = $student->attendances()
             ->with('session.course')
@@ -197,7 +230,7 @@ class AttendanceController extends Controller
             'late_count' => $student->attendances()->where('status', 'late')->count(),
         ];
 
-        return view('student.dashboard', compact('attendances', 'activeSessions', 'stats'));
+        return view('student.dashboard', compact('todayClasses', 'attendances', 'activeSessions', 'stats'));
     }
 
     public function scanPage()

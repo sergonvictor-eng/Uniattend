@@ -11,6 +11,50 @@
     @endif
 </div>
 
+<div class="card">
+    <h3>Today's Classes - {{ now()->format('l, F j, Y') }}</h3>
+    @if($todayClasses->count() > 0)
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            @foreach($todayClasses as $classData)
+                @php
+                    $course = $classData['course'];
+                    $timetable = $classData['timetable'];
+                    $canScan = $classData['can_scan'];
+                    $hasActiveSession = $classData['has_active_session'];
+                @endphp
+                <div class="stat-card" style="{{ $canScan && $hasActiveSession ? 'border: 2px solid #28a745; background-color: #f8fff9;' : '' }}">
+                    <h3>{{ $course->course_name }}</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">{{ $course->course_code }}</p>
+                    <div style="margin: 1rem 0;">
+                        <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">
+                            <strong>Time:</strong> {{ $timetable->start_time }} - {{ $timetable->end_time }}
+                        </p>
+                        <span style="font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 12px; background-color: {{ $canScan ? '#d4edda' : '#f8d7da' }}; color: {{ $canScan ? '#155724' : '#721c24' }};">
+                            {{ $canScan ? 'Active Now' : 'Not Yet Time' }}
+                        </span>
+                        @if($hasActiveSession)
+                            <span style="font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 12px; background-color: #007bff; color: white; margin-left: 0.5rem;">
+                                QR Code Available
+                            </span>
+                        @endif
+                    </div>
+                    @if($canScan && $hasActiveSession)
+                        <a href="{{ route('student.scan') }}" class="btn btn-primary" style="margin-top: 0.5rem;">
+                            Scan QR Code
+                        </a>
+                    @else
+                        <button disabled class="btn btn-primary" style="background-color: #6c757d; cursor: not-allowed; margin-top: 0.5rem;">
+                            Scan QR Code
+                        </button>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @else
+        <p style="color: #666;">No classes scheduled for today.</p>
+    @endif
+</div>
+
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
     <div class="stat-card">
         <h3>Total Classes</h3>
@@ -86,12 +130,14 @@
         font-size: 0.9rem;
         font-weight: 500;
         margin-bottom: 0.5rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .stat-number {
         color: #001f3f;
         font-size: 2rem;
         font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
     }
 </style>
 @endsection

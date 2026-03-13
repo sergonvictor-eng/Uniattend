@@ -32,7 +32,8 @@ class AuthController extends Controller
             ]);
         }
 
-        Auth::login($user);
+        $remember = $request->has('remember');
+        Auth::login($user, $remember);
         $request->session()->regenerate();
 
         // Redirect based on role
@@ -51,6 +52,34 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendPasswordReset(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.exists' => 'No account found with this email address.',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        
+        if ($user) {
+            // Reset password to default
+            $user->password = Hash::make('password123');
+            $user->save();
+
+            return redirect()->route('password.request')
+                ->with('success', 'Your password has been reset to: password123. You can now login with this password.');
+        }
+
+        return redirect()->route('password.request')
+            ->with('error', 'Unable to reset password. Please contact administrator.');
     }
 
     // API Authentication

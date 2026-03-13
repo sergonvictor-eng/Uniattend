@@ -55,12 +55,14 @@
         font-size: 0.9rem;
         font-weight: 500;
         margin-bottom: 0.5rem;
+        font-family: 'Montserrat', sans-serif;
     }
 
     .stat-number {
         color: #001f3f;
         font-size: 2.5rem;
         font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
     }
 </style>
 @endsection

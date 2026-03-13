@@ -9,46 +9,77 @@
 </div>
 
 <div class="card">
-    <h3>My Courses</h3>
-    @if($courses->count() > 0)
+    <h3>Today's Classes - {{ now()->format('l, F j, Y') }}</h3>
+    @if($todayClasses->count() > 0)
         <div style="display: grid; gap: 1rem; margin-top: 1rem;">
-            @foreach($courses as $course)
+            @foreach($todayClasses as $classData)
+                @php
+                    $course = $classData['course'];
+                    $timetable = $classData['timetable'];
+                    $canStart = $classData['can_start_session'];
+                    $isActive = $classData['is_active'];
+                @endphp
+                <div style="border: 1px solid #e0e0e0; padding: 1.5rem; border-radius: 8px; {{ $canStart ? 'background-color: #f8f9fa;' : '' }}">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; color: #001f3f;">{{ $course->course_name }}</h4>
+                            <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">{{ $course->course_code }}</p>
+                            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                                <span style="font-size: 0.85rem; color: #666;">
+                                    <strong>Time:</strong> {{ $timetable->start_time }} - {{ $timetable->end_time }}
+                                </span>
+                                <span style="font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 12px; background-color: {{ $canStart ? '#d4edda' : '#f8d7da' }}; color: {{ $canStart ? '#155724' : '#721c24' }};">
+                                    {{ $canStart ? 'Active Now' : 'Not Yet Time' }}
+                                </span>
+                            </div>
+                        </div>
+                        @if($isActive)
+                            <span style="padding: 0.5rem 1rem; background-color: #28a745; color: white; border-radius: 4px; font-size: 0.85rem;">
+                                Session Active
+                            </span>
+                        @endif
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        @if($canStart && !$isActive)
+                            <button onclick="startSession({{ $course->id }})" class="btn btn-primary">
+                                Start Attendance Session
+                            </button>
+                        @elseif($isActive)
+                            <a href="{{ route('lecturer.qr-code', $course->id) }}" class="btn btn-primary">
+                                View QR Code
+                            </a>
+                            <button onclick="endSession({{ $course->id }})" class="btn btn-primary" style="background-color: #dc3545;">
+                                End Session
+                            </button>
+                        @else
+                            <button disabled class="btn btn-primary" style="background-color: #6c757d; cursor: not-allowed;">
+                                Start Attendance Session
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @else
+        <p style="color: #666;">No classes scheduled for today.</p>
+    @endif
+</div>
+
+<div class="card">
+    <h3>All Courses</h3>
+    @if(auth()->user()->coursesAsLecturer()->count() > 0)
+        <div style="display: grid; gap: 1rem; margin-top: 1rem;">
+            @foreach(auth()->user()->coursesAsLecturer as $course)
                 <div style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 4px;">
                     <h4 style="margin-bottom: 0.5rem;">{{ $course->course_name }}</h4>
                     <p style="color: #666; font-size: 0.9rem;">{{ $course->course_code }}</p>
-                    <button onclick="startSession({{ $course->id }})" class="btn btn-primary" style="margin-top: 1rem;">
-                        Start Attendance Session
-                    </button>
                 </div>
             @endforeach
         </div>
     @else
         <p style="color: #666;">No courses assigned yet.</p>
     @endif
-</div>
-
-<div class="card">
-    <h3>Active Sessions</h3>
-    <div id="activeSessions">
-        @if($activeSessions->count() > 0)
-            @foreach($activeSessions as $session)
-                <div style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                    <h4>{{ $session->course->course_name }}</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Started: {{ $session->start_time->format('M d, Y H:i') }}</p>
-                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                        <a href="{{ route('lecturer.qr-code', $session->id) }}" class="btn btn-primary">
-                            View QR Code
-                        </a>
-                        <button onclick="endSession({{ $session->id }})" class="btn btn-primary" style="background-color: #dc3545;">
-                            End Session
-                        </button>
-                    </div>
-                </div>
-            @endforeach
-        @else
-            <p style="color: #666;">No active sessions.</p>
-        @endif
-    </div>
 </div>
 @endsection
 

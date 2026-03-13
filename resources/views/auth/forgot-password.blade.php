@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - UniAttend</title>
+    <title>Forgot Password - UniAttend</title>
     
     <style>
         * {
@@ -105,6 +105,7 @@
             font-size: 0.9rem;
             font-family: 'Montserrat', sans-serif;
             font-weight: 400;
+            line-height: 1.5;
         }
 
         .form-group {
@@ -135,6 +136,15 @@
             border-color: #001f3f;
         }
 
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 0.75rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
         .error-message {
             background-color: #f8d7da;
             color: #721c24;
@@ -144,7 +154,7 @@
             font-size: 0.9rem;
         }
 
-        .btn-login {
+        .btn-submit {
             width: 100%;
             padding: 0.75rem;
             background-color: #001f3f;
@@ -158,61 +168,27 @@
             font-family: 'Montserrat', sans-serif;
         }
 
-        .btn-login:hover {
+        .btn-submit:hover {
             background-color: #003366;
         }
 
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
+        .back-to-login {
+            text-align: center;
+            margin-top: 2rem;
         }
 
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-            border-radius: 4px;
-        }
-
-        .remember-me label {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #666;
-            cursor: pointer;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 400;
-        }
-
-        .forgot-password {
-            font-size: 0.9rem;
+        .back-to-login a {
             color: #001f3f;
             text-decoration: none;
+            font-size: 0.9rem;
             transition: color 0.3s ease;
             font-family: 'Montserrat', sans-serif;
             font-weight: 500;
         }
 
-        .forgot-password:hover {
+        .back-to-login a:hover {
             color: #003366;
             text-decoration: underline;
-        }
-
-        .info-text {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #e0e0e0;
-            text-align: center;
-            color: #666;
-            font-size: 0.85rem;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 400;
         }
 
         @media (max-width: 768px) {
@@ -254,9 +230,15 @@
                 </div>
 
                 <div class="welcome-text">
-                    <h2>Hello, Welcome Back</h2>
-                    <p>Please login to your account</p>
+                    <h2>Forgot Password?</h2>
+                    <p>Enter your email address and we'll reset your password to the default password.</p>
                 </div>
+
+                @if(session('success'))
+                    <div class="success-message">
+                        {{ session('success') }}
+                    </div>
+                @endif
 
                 @if($errors->any())
                     <div class="error-message">
@@ -264,47 +246,27 @@
                     </div>
                 @endif
 
-                <form action="{{ route('login') }}" method="POST">
+                <form action="{{ route('password.email') }}" method="POST">
                     @csrf
                     
                     <div class="form-group">
-                        <label for="identifier">Admission Number / Staff ID</label>
+                        <label for="email">Email Address</label>
                         <input 
-                            type="text" 
-                            id="identifier" 
-                            name="identifier" 
+                            type="email" 
+                            id="email" 
+                            name="email" 
                             required 
                             autofocus
-                            value="{{ old('identifier') }}"
-                            placeholder="Enter your ID"
+                            value="{{ old('email') }}"
+                            placeholder="Enter your registered email address"
                         >
                     </div>
 
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            required
-                            placeholder="Enter your password"
-                        >
-                    </div>
-
-                    <div class="form-options">
-                        <div class="remember-me">
-                            <input type="checkbox" id="remember" name="remember" value="1">
-                            <label for="remember">Remember Me</label>
-                        </div>
-                        <a href="{{ route('password.request') }}" class="forgot-password">Forgot Password?</a>
-                    </div>
-
-                    <button type="submit" class="btn-login">Login</button>
+                    <button type="submit" class="btn-submit">Reset Password</button>
                 </form>
 
-                <div class="info-text">
-                    Only registered users can access the system.<br>
-                    Contact your administrator if you need access.
+                <div class="back-to-login">
+                    <a href="{{ route('login') }}">← Back to Login</a>
                 </div>
             </div>
         </div>

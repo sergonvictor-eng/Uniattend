@@ -6,6 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'UniAttend') - University Attendance System</title>
     
+    <!-- Montserrat Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -14,7 +19,8 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-weight: 500;
             background-color: #ffffff;
             color: #1a1a1a;
             line-height: 1.6;
@@ -38,6 +44,7 @@
         .navbar h1 {
             font-size: 1.5rem;
             font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .navbar-menu {
@@ -50,6 +57,8 @@
             color: white;
             text-decoration: none;
             font-size: 0.95rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
         }
 
         .navbar-menu a:hover {
@@ -64,6 +73,8 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
         }
 
         .btn-logout:hover {
@@ -106,6 +117,8 @@
             color: #001f3f;
             margin-bottom: 1rem;
             font-size: 1.5rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
         }
 
         .btn {
@@ -117,6 +130,8 @@
             font-size: 1rem;
             text-decoration: none;
             text-align: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
         }
 
         .btn-primary {
@@ -137,6 +152,7 @@
             margin-bottom: 0.5rem;
             font-weight: 500;
             color: #333;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .form-group input,
@@ -146,6 +162,8 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 1rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 400;
         }
 
         .form-group input:focus,
